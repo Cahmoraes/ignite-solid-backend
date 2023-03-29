@@ -4,6 +4,10 @@
   ],
   "rules": {
     "camelcase": "off",
-    "no-useless-constructor": "off"
+    "no-useless-constructor": "off",
+    "no-use-before-define": "off",
+    "no-dupe-class-members": "off",
+    "no-redeclare": "off",
+    "lines-between-class-members": "off"
   }
 }

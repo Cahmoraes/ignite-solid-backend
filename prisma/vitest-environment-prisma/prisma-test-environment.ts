@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import 'dotenv/config'
-import { exec } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { Environment } from 'vitest'
 
@@ -13,7 +13,7 @@ export default <Environment>{
     const schema = randomUUID()
     const databaseURL = generateDatabaseURL(schema)
     process.env.DATABASE_URL = databaseURL
-    exec('npx prisma migrate deploy')
+    execSync('npx prisma migrate deploy')
 
     return {
       async teardown() {
