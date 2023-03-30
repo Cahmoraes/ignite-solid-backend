@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { InvalidCredentialsError } from '@/use-cases/errors/invalid-credentials-error'
 import { makeAuthenticateUseCase } from '@/use-cases/factories/make-authenticate-use-case'
+import { User } from '@prisma/client'
 
 const authenticateBodySchema = z.object({
   email: z.string().email(),
@@ -22,11 +23,20 @@ export async function authenticate(
       password,
     })
 
-    const token = await createJWT({ reply, sub: user.id })
+    const token = await createJWT({ reply, user })
+    const refreshToken = await createRefreshToken({ reply, user })
 
-    return reply.status(200).send({
-      token,
-    })
+    return reply
+      .setCookie('refreshToken', refreshToken, {
+        path: '/',
+        secure: true,
+        sameSite: true,
+        httpOnly: true,
+      })
+      .status(200)
+      .send({
+        token,
+      })
   } catch (error) {
     if (error instanceof InvalidCredentialsError) {
       return reply.code(400).send({ message: error.message })
@@ -38,13 +48,26 @@ export async function authenticate(
 
 interface ICreateJWTParams {
   reply: FastifyReply
-  sub: string
+  user: User
 }
-async function createJWT({ reply, sub }: ICreateJWTParams) {
+async function createJWT({ reply, user }: ICreateJWTParams) {
   return await reply.jwtSign(
-    {},
     {
-      sign: { sub },
+      role: user.role,
+    },
+    {
+      sign: { sub: user.id },
+    },
+  )
+}
+
+async function createRefreshToken({ reply, user }: ICreateJWTParams) {
+  return await reply.jwtSign(
+    {
+      role: user.role,
+    },
+    {
+      sign: { sub: user.id, expiresIn: '7d' },
     },
   )
 }
